@@ -11,6 +11,103 @@
 std::random_device rd;
 std::mt19937 generator(rd());
 
+std::vector < std::vector<int>> M;
+int kadane(int* arr, int* start, int* finish, int n)
+{
+    // initialize sum, maxSum and
+    int sum = 0, maxSum = INT_MIN, i;
+
+    // Just some initial value to check
+    // for all negative values case
+    *finish = -1;
+
+    // local variable
+    int local_start = 0;
+
+    for (i = 0; i < n; ++i) {
+        sum += arr[i];
+        if (sum < 0) {
+            sum = 0;
+            local_start = i + 1;
+        }
+        else if (sum > maxSum) {
+            maxSum = sum;
+            *start = local_start;
+            *finish = i;
+        }
+    }
+
+    // There is at-least one
+    // non-negative number
+    if (*finish != -1)
+        return maxSum;
+
+    // Special Case: When all numbers
+    // in arr[] are negative
+    maxSum = arr[0];
+    *start = *finish = 0;
+
+    // Find the maximum element in array
+    for (i = 1; i < n; i++) {
+        if (arr[i] > maxSum) {
+            maxSum = arr[i];
+            *start = *finish = i;
+        }
+    }
+    return maxSum;
+}
+
+// The main function that finds
+// maximum sum rectangle in M[][]
+void findMaxSum()
+{
+    // Variables to store the final output
+    int maxSum = INT_MIN, finalLeft, finalRight, finalTop,
+        finalBottom;
+
+    int left, right, i;
+    int temp[cols], sum, start, finish;
+
+    // Set the left column
+    for (left = 0; left < cols; ++left) {
+        // Initialize all elements of temp as 0
+        memset(temp, 0, sizeof(temp));
+
+        // Set the right column for the left
+        // column set by outer loop
+        for (right = left; right < cols; ++right) {
+
+            // Calculate sum between current left
+            // and right for every row 'i'
+            for (i = 0; i < rows; ++i)
+                temp[i] += M[i][right];
+
+            // Find the maximum sum subarray in temp[].
+            // The kadane() function also sets values
+            // of start and finish. So 'sum' is sum of
+            // rectangle between (start, left) and
+            // (finish, right) which is the maximum sum
+            // with boundary columns strictly as left
+            // and right.
+            sum = kadane(temp, &start, &finish, 10);
+
+            // Compare sum with maximum sum so far.
+            // If sum is more, then update maxSum and
+            // other output values
+            if (sum > maxSum) {
+                maxSum = sum;
+                finalLeft = left;
+                finalRight = right;
+                finalTop = start;
+                finalBottom = finish;
+            }
+        }
+    }
+
+
+}
+
+
 static int generateRandomNumber(int N) {
     std::uniform_real_distribution<double> dis(0.0, 1.0); // Random number between 0 (inclusive) and 1 (exclusive)
     double randomNumber = dis(generator);
@@ -25,14 +122,14 @@ static double getFin(std::chrono::steady_clock::time_point start_time) {
     return elapsed_ms;
 }
 
-int M[20][10][10]{};
-int suma(int initX, int finX, int initY, int finY, int x) {
+
+static int suma(int initX, int finX, int initY, int finY) {
     int acum = 0;
     for (int i = initX; i <= finX; i++)
     {
         for (int j = initY; j <= finY; j++)
         {
-            acum += M[x][i][j];
+            acum += M[i][j];
         }
     }
     return acum;
@@ -40,39 +137,36 @@ int suma(int initX, int finX, int initY, int finY, int x) {
 
 int main()
 {
-    int n = 10;
-    
     for (int x = 0; x < 20; x++)
     {
-        printf("%d:\n", x);
-        for (int i = 0; i < n; i++)
+        for (int i = 0; i < cols; i++)
         {
-            for (int j = 0; j < n; j++)
+            for (int j = 0; j < rows; j++)
             {
                 int num = generateRandomNumber(100);
                 if (generateRandomNumber(20)>x)
                 {
                     num *= -1;
                 }
-                M[x][i][j] = num;
-                printf("%d\t|", num);
+                M[i][j] = num;
             }
-            printf("\n");
         }
     }
-    
+    double timeBF;
+    double timeK;
     for (int i = 0; i < 20; i++)
     {
+        auto start_time = std::chrono::high_resolution_clock::now();
         int max = std::numeric_limits<int>::min();
-        for (int xi = 0; xi < n; xi++)
+        for (int xi = 0; xi < cols; xi++)
         {
-            for (int yi = 0; yi < n; yi++)
+            for (int yi = 0; yi < rows; yi++)
             {
-                for (int xf = xi; xf < n; xf++)
+                for (int xf = xi; xf < cols; xf++)
                 {
-                    for (int yf = yi; yf < n; yf++)
+                    for (int yf = yi; yf < rows; yf++)
                     {
-                        int res = suma(xi, xf, yi, yf, i);
+                        int res = suma(xi, xf, yi, yf);
                         if (res > max)
                         {
                             max = res;
@@ -81,7 +175,11 @@ int main()
                 }
             }
         }
-        printf("%d:%d\n", i, max);
+        timeBF = getFin(start_time);
+        start_time = std::chrono::high_resolution_clock::now();
+        findMaxSum(i);
+        timeK = getFin(start_time);
+        printf("%d;%lf;%lf\n", i, timeBF, timeK);
     }
     
     
