@@ -11,6 +11,8 @@
 std::random_device rd;
 std::mt19937 generator(rd());
 
+#define TAM 20
+
 std::vector < std::vector<int>> M;
 int kadane(int* arr, int* start, int* finish, int n)
 {
@@ -59,27 +61,27 @@ int kadane(int* arr, int* start, int* finish, int n)
 
 // The main function that finds
 // maximum sum rectangle in M[][]
-void findMaxSum()
+static void findMaxSum(int n)
 {
     // Variables to store the final output
     int maxSum = INT_MIN, finalLeft, finalRight, finalTop,
         finalBottom;
 
     int left, right, i;
-    int temp[cols], sum, start, finish;
+    int temp[TAM], sum, start, finish;
 
     // Set the left column
-    for (left = 0; left < cols; ++left) {
+    for (left = 0; left < n; ++left) {
         // Initialize all elements of temp as 0
         memset(temp, 0, sizeof(temp));
 
         // Set the right column for the left
         // column set by outer loop
-        for (right = left; right < cols; ++right) {
+        for (right = left; right < n; ++right) {
 
             // Calculate sum between current left
             // and right for every row 'i'
-            for (i = 0; i < rows; ++i)
+            for (i = 0; i < n; ++i)
                 temp[i] += M[i][right];
 
             // Find the maximum sum subarray in temp[].
@@ -118,7 +120,7 @@ static int generateRandomNumber(int N) {
 static double getFin(std::chrono::steady_clock::time_point start_time) {
     auto end_time = std::chrono::high_resolution_clock::now();
     auto elapsed_ns = std::chrono::duration_cast<std::chrono::nanoseconds>(end_time - start_time);
-    double elapsed_ms = std::chrono::duration<double, std::micro>(elapsed_ns).count();
+    double elapsed_ms = std::chrono::duration<double, std::milli>(elapsed_ns).count();
     return elapsed_ms;
 }
 
@@ -134,14 +136,42 @@ static int suma(int initX, int finX, int initY, int finY) {
     }
     return acum;
 }
+static void bruteForceMax(int n) {
+    int max = INT_MIN;
+    for (int xi = 0; xi < n; xi++)
+    {
+        for (int yi = 0; yi < n; yi++)
+        {
+            for (int xf = 0; xf < n; xf++)
+            {
+                for (int yf = 0; yf < n; yf++)
+                {
+                    int res = suma(xi, xf, yi, yf);
+                    if (res > max)
+                    {
+                        max = res;
+                    }
+                }
+            }
+        }
+    }
+}
 
 int main()
 {
+    int n = TAM;
+    std::vector<int> aux;
+    aux.assign(n, 0);
+    M.assign(n, aux);
+    
+    auto start_time = std::chrono::high_resolution_clock::now();
     for (int x = 0; x < 20; x++)
     {
-        for (int i = 0; i < cols; i++)
+        double timeBF = 0;
+        double timeK = 0;
+        for (int i = 0; i < n; i++)
         {
-            for (int j = 0; j < rows; j++)
+            for (int j = 0; j < n; j++)
             {
                 int num = generateRandomNumber(100);
                 if (generateRandomNumber(20)>x)
@@ -151,8 +181,17 @@ int main()
                 M[i][j] = num;
             }
         }
+        start_time = std::chrono::high_resolution_clock::now();
+        findMaxSum(n);
+        timeK = getFin(start_time);
+
+        start_time = std::chrono::high_resolution_clock::now();
+        bruteForceMax(n);
+        timeBF = getFin(start_time);
+        
+        std::cout << x << ";" << timeBF << ";" << timeK << "\n";
     }
-    double timeBF;
+    /*double timeBF;
     double timeK;
     for (int i = 0; i < 20; i++)
     {
@@ -180,7 +219,7 @@ int main()
         findMaxSum(i);
         timeK = getFin(start_time);
         printf("%d;%lf;%lf\n", i, timeBF, timeK);
-    }
+    }*/
     
     
 }
